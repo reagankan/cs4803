@@ -58,6 +58,8 @@ Classification is the task of assigning a label to the input from a fixed set of
 
 \\[ z\_i = Wx\_i + b \\]
 - <img src="https://latex.codecogs.com/gif.latex?O_t=\text { \\[ z\_i = Wx\_i + b \\] } t " />
+- <img src="https://latex.codecogs.com/gif.latex?O_t=\text {  } t " />
+- <img src="https://latex.codecogs.com/gif.latex?=\\\[ z\_i = Wx\_i + b \\]text {  } t " />
 
 Here, W is a matrix of weights of dimensionality \\(K \times D\\) and b is a vector of bias terms of dimensionality \\(K \times 1\\). The process of training is to find the appropriate values for W and b such that the score corresponding to the correct class is high. In order to do this, we need a function that evaluates the performance. Using this evaluation as feedback, the weights can be updated in the right 'direction' to improve the performance of the classifier.
 
