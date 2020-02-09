@@ -72,15 +72,25 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # unpack variables from the model dictionary
   W1,b1,W2,b2 = model['W1'], model['b1'], model['W2'], model['b2']
   N, D = X.shape
-
+  H, C = W2.shape
+  # print(f"N: {N}")
+  # print(f"D: {D}")
+  # print(f"H: {H}")
+  # print(f"C: {C}")
   # compute the forward pass
-  scores = None
   #############################################################################
   # TODO: Perform the forward pass, computing the class scores for the input. #
   # Store the result in the scores variable, which should be an array of      #
   # shape (N, C).                                                             #
   #############################################################################
-  pass
+  # print(f"X shape: {X.shape}")
+  # print(f"W1 shape: {W1.shape}")
+  # print(f"b1 shape: {b1.shape}")
+  scores = W1.T.dot(X.T) + b1.reshape(H, 1) #first layer
+  scores = np.maximum(scores, 0) #relu
+  scores = W2.T.dot(scores) + b2.reshape(C, 1) #second layer
+  scores = scores.T
+  assert(scores.shape == (N, C))
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
@@ -98,7 +108,52 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # classifier loss. So that your results match ours, multiply the            #
   # regularization loss by 0.5                                                #
   #############################################################################
-  pass
+  # num_train = X.shape[0]
+
+  # scores -= scores.max()
+  # scores = np.exp(scores)
+  # scores_sums = np.sum(scores, axis=1)
+  # cors = scores[range(num_train), y]
+  # loss = cors / scores_sums
+  # loss = -np.sum(np.log(loss)) / num_train + reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+  # print(f"loss: {loss}")
+
+
+  # Z1 = X.dot(W1) + b1
+  # O1 = np.maximum(0, Z1)
+  # scores = O1.dot(W2) + b2
+  s = scores
+  # s -= np.mean(s)
+  exp_s = np.exp(s)
+  norm = np.sum(exp_s, axis=1, keepdims=True)# * 1e-10
+  exp_s_norm = exp_s / norm # [N x K]
+  # print()
+  # print(f"norm: {norm}")
+
+  # average cross-entropy loss and regularization
+  idx = (range(N), y)
+  data_loss = np.sum(-np.log(exp_s_norm[idx])) / N
+  reg_loss = 0.5 * reg * np.sum(W1 * W1) + 0.5 * reg * np.sum(W2 * W2)
+  loss = data_loss + reg_loss
+  # print(f"loss: {loss}")
+
+  # weights = np.hstack([W1.T, b1.reshape(H, 1)])
+  # print(f"X shape: {X.shape}")
+  # print(f"y shape: {y.shape}")
+  # print(f"weights shape: {weights.shape}")
+
+  # in1, in2 = W1.T, X.T
+  # loss1, softmax_grad1 = softmax_loss_vectorized(in1, in2, y, reg)
+  # weights = np.hstack([W2.T, b2.reshape(C, 1)])
+  # print(f"loss1: {reg*loss1}")
+  # loss = loss1 * 0.5
+  # print(f"X shape: {X.shape}")
+  # print(f"y shape: {y.shape}")
+  # print(f"W2 shape: {W2.shape}")
+  # print(f"b2 shape: {b2.shape}")
+  # print(f"weights shape: {weights.shape}")
+  # loss2, softmax_grad2 = softmax_loss_vectorized(W2.T, X.T, y, reg)
+  # loss = 0.5 * (loss1 + loss2)
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
@@ -110,7 +165,28 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # and biases. Store the results in the grads dictionary. For example,       #
   # grads['W1'] should store the gradient on W1, and be a matrix of same size #
   #############################################################################
-  pass
+  z1 = X.dot(W1) + b1
+  a1 = np.maximum(0, z1) # pass through ReLU activation function
+  scores = a1.dot(W2) + b2
+
+  dscores = exp_s_norm
+  dscores[range(N),y] -= 1
+  dscores /= N
+
+  # W2 and b2
+  grads['W2'] = np.dot(a1.T, dscores)
+  grads['b2'] = np.sum(dscores, axis=0)
+  # next backprop into hidden layer
+  dhidden = np.dot(dscores, W2.T)
+  # backprop the ReLU non-linearity
+  dhidden[a1 <= 0] = 0
+  # finally into W,b
+  grads['W1'] = np.dot(X.T, dhidden)
+  grads['b1'] = np.sum(dhidden, axis=0)
+
+  # add regularization gradient contribution
+  grads['W2'] += reg * W2
+  grads['W1'] += reg * W1
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
