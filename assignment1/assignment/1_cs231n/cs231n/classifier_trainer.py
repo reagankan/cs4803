@@ -98,7 +98,15 @@ class ClassifierTrainer(object):
           # step_cache[p] and the momentum strength is stored in momentum.    #
           # Don't forget to also update the step_cache[p].                    #
           #####################################################################
-          pass
+          #important: dx is equivalent to "x" in the cs231n website.
+          # realized after looking at sgd update, line 90.
+          ###
+          # from cs231n website notes:
+          # v = mu * v - learning_rate * dx # integrate velocity
+          # x += v # integrate position
+          ###
+          self.step_cache[p] = momentum * self.step_cache[p] - learning_rate * grads[p]
+          dx = self.step_cache[p]
           #####################################################################
           #                      END OF YOUR CODE                             #
           #####################################################################
@@ -111,7 +119,10 @@ class ClassifierTrainer(object):
           # TODO: implement the RMSProp update and store the parameter update #
           # dx. Don't forget to also update step_cache[p]. Use smoothing 1e-8 #
           #####################################################################
-          pass
+          # cache = decay_rate * cache + (1 - decay_rate) * dx**2
+          # x += - learning_rate * dx / np.sqrt(cache + 1e-8)
+          self.step_cache[p] = learning_rate_decay * self.step_cache[p] + (1 - learning_rate_decay) * dx**2
+          dx = - learning_rate * grads[p] / np.sqrt(self.step_cache[p] + 1e-8)
           #####################################################################
           #                      END OF YOUR CODE                             #
           #####################################################################
