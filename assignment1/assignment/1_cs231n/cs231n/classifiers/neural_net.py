@@ -86,10 +86,10 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # print(f"X shape: {X.shape}")
   # print(f"W1 shape: {W1.shape}")
   # print(f"b1 shape: {b1.shape}")
-  scores = W1.T.dot(X.T) + b1.reshape(H, 1) #first layer
-  scores = np.maximum(scores, 0) #relu
-  scores = W2.T.dot(scores) + b2.reshape(C, 1) #second layer
-  scores = scores.T
+  fc1_output = W1.T.dot(X.T) + b1.reshape(H, 1) #first layer
+  relu_output = np.maximum(fc1_output, 0) #relu
+  fc2_output = W2.T.dot(relu_output) + b2.reshape(C, 1) #second layer
+  scores = fc2_output.T
   assert(scores.shape == (N, C))
   #############################################################################
   #                              END OF YOUR CODE                             #
@@ -132,8 +132,9 @@ def two_layer_net(X, model, y=None, reg=0.0):
 
   # average cross-entropy loss and regularization
   idx = (range(N), y)
-  data_loss = np.sum(-np.log(exp_s_norm[idx])) / N
-  reg_loss = 0.5 * reg * np.sum(W1 * W1) + 0.5 * reg * np.sum(W2 * W2)
+  data_loss = np.sum(-np.log(exp_s_norm[idx])) / N #softmax
+  reg_loss = 0.5 * (reg * np.sum(W1 * W1) + reg * np.sum(W2 * W2))
+  
   loss = data_loss + reg_loss
   # print(f"loss: {loss}")
 
@@ -165,28 +166,73 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # and biases. Store the results in the grads dictionary. For example,       #
   # grads['W1'] should store the gradient on W1, and be a matrix of same size #
   #############################################################################
-  z1 = X.dot(W1) + b1
-  a1 = np.maximum(0, z1) # pass through ReLU activation function
-  scores = a1.dot(W2) + b2
 
-  dscores = exp_s_norm
-  dscores[range(N),y] -= 1
-  dscores /= N
+  grads = {}
+  
+  """Fully Connected Layer 2
+  follow format from lecture notes
+  x     -> box -> y
+  dL/dx <- box <- dL/dy(given from backprop)
+  ***chain rule: dL/dW = dL/dy * dy/dW
+  x = relu_output
+  y = fc2_output = W2 * x + b
+  dL/dy = exp_s_norm
+  dL/dx(pass back to relu) = dL/dy(given) * dy/dx(= W2)
 
-  # W2 and b2
-  grads['W2'] = np.dot(a1.T, dscores)
-  grads['b2'] = np.sum(dscores, axis=0)
-  # next backprop into hidden layer
-  dhidden = np.dot(dscores, W2.T)
-  # backprop the ReLU non-linearity
-  dhidden[a1 <= 0] = 0
-  # finally into W,b
-  grads['W1'] = np.dot(X.T, dhidden)
-  grads['b1'] = np.sum(dhidden, axis=0)
+  ____
+  W = W2
+  dy/dW = x = relu_output
+  ____
+  W = b2
+  dy/dW = ?????
+  ____
+  """
+  exp_s_norm[idx] -= 1
+  grads["W2"] = exp_s_norm.T.dot(relu_output.T)/N
+  temp = grads["W2"]
+  reg_term = reg * W2.T
+  # print(f"dW2 shape: {temp.shape}")
+  # print(f"W2 shape: {W2.shape}")
+  # print(f"reg: {reg}")
+  # print(f"softmax.shape: {temp.shape}")
+  # print(f"reg_term: {reg_term}")
+  # print(f"reg_term.shape: {reg_term.shape}")
+  grads["W2"] += reg_term
+  grads["W2"] = grads["W2"].T
+  grads["b2"] = np.sum(exp_s_norm, axis = 0)/N
 
-  # add regularization gradient contribution
-  grads['W2'] += reg * W2
-  grads['W1'] += reg * W1
+  backpropGrad = exp_s_norm.dot(W2.T)/N
+  """RELU
+  x     -> box -> y
+  dL/dx <- box <- dL/dy(given from backprop)
+  ***chain rule: dL/dW = dL/dy * dy/dW
+  x = W1 * x + b1
+  y = relu_output = max(0, x)
+  dL/dy = backpropGrad
+
+  *relu just zeros all gradients corresponding to inputs that were <= 0
+  * aka. zero wherever 0 in relu output
+  """
+  backpropGrad[relu_output.T <= 0] = 0
+  # print(backpropGrad.shape)
+  # print(relu_output.shape)
+  # assert(False)
+
+  """Fully Connected layer 1
+  x     -> box -> y
+  dL/dx <- box <- dL/dy(given from backprop)
+  ***chain rule: dL/dW = dL/dy * dy/dW
+  x = X(the data)
+  y = fc1_output = W1 * x + b1
+  dL/dy = backpropGrad
+
+  ___
+  dL/dW1 = dL/dy(backpropGrad) * dy/dW1(= x)
+  """
+  reg_term = reg * W1.T
+  grads["W1"] = backpropGrad.T.dot(X).T
+  grads["W1"] += reg_term.T
+  grads["b1"] = np.sum(backpropGrad, axis = 0)
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
