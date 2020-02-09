@@ -38,17 +38,20 @@ def softmax_loss_vectorized(W, X, y, reg):
   sf_max = np.zeros_like(y)
   idx = np.array(range(samples))
   indices = tuple([y,idx])
-  print(f"y.shape: {y.shape}")
-  print(f"idx.shape: {idx.shape}")
-  print(f"exp_s_norm.shape: {exp_s_norm.shape}")
   exp_sj_norm = exp_s_norm[indices]
   #print(f'exp_sj_norm shape = {exp_sj_norm.shape}')
   sf_max = -np.log(exp_sj_norm)
   #print(f'sf_max shape = {sf_max.shape}')
   #print(f'samples = {samples}')
-  loss = np.sum(sf_max)/samples + 0.5*reg *(np.sum(np.power(W,2)))
+  #regularization should not include b, so b needs subtracted
+  loss = np.sum(sf_max)/samples + 0.5*reg *(np.sum(np.power(W,2))-np.sum(np.power(W[:,0],2)))
+  #loss = np.sum(sf_max)/samples + 0.5*reg *(np.sum(np.power(W,2)))
   exp_s_norm[indices] -= 1
   dW = (exp_s_norm.dot(X.T)/samples+reg*W)
+  db = np.sum(exp_s_norm, axis = 1)/samples
+  #update db
+  dW[:,0] = db.T
+  #print(f'db error = {error}')
   #print(f'dW shape = {dW.shape}')
   #print(f'dW[0] = {dW[0]}')
   #############################################################################
