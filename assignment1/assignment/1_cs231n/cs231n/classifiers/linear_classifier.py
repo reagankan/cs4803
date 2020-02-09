@@ -45,13 +45,21 @@ class LinearClassifier:
       # Hint: Use np.random.choice to generate indices. Sampling with         #
       # replacement is faster than sampling without replacement.              #
       #########################################################################
-      pass
+      random_idx = tuple(np.random.choice(num_train, batch_size))
+      X_batch = np.take(X, random_idx, axis=1)
+      y_batch = np.take(y, random_idx)
+      print("found batch.")
+      #assert(X_batch.shape == (dim, batch_size))
+      #assert(y_batch.shape == (batch_size,))
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
 
       # evaluate loss and gradient
       loss, grad = self.loss(X_batch, y_batch, reg)
+      print("loss + grad computed.")
+      # print(f"loss: {loss}")
+      # print(f"grad: {grad}")
       loss_history.append(loss)
 
       # perform parameter update
@@ -59,12 +67,13 @@ class LinearClassifier:
       # TODO:                                                                 #
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
-      pass
+      self.W -= learning_rate * grad
+      print("weights updated.")
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
 
-      if verbose and it % 100 == 0:
+      if verbose and it % 10 == 0:
         print('iteration %d / %d: loss %f' % (it, num_iters, loss))
 
     return loss_history
@@ -87,7 +96,15 @@ class LinearClassifier:
     # TODO:                                                                   #
     # Implement this method. Store the predicted labels in y_pred.            #
     ###########################################################################
-    pass
+    score = self.W.dot(X).T
+    exp_score = np.exp(score)
+
+    N = exp_score.shape[0]
+    k = exp_score.shape[1]
+    norm = np.sum(exp_score, axis = 1)
+    exp_score_norm = exp_score/norm.reshape(N, 1)
+
+    y_pred = np.argmax(exp_score_norm, axis=1)
     ###########################################################################
     #                           END OF YOUR CODE                              #
     ###########################################################################
