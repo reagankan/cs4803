@@ -6,7 +6,7 @@ def affine_forward(x, w, b):
 
   The input x has shape (N, d_1, ..., d_k) where x[i] is the ith input.
   We multiply this against a weight matrix of shape (D, M) where
-  D = \prod_i d_i
+  D = prod_i d_i
 
   Inputs:
   x - Input data, of shape (N, d_1, ..., d_k)
@@ -22,7 +22,10 @@ def affine_forward(x, w, b):
   # TODO: Implement the affine forward pass. Store the result in out. You     #
   # will need to reshape the input into rows.                                 #
   #############################################################################
-  pass
+  N = x.shape[0]
+  D = np.prod(x.shape[1:])
+  x_reshaped = x.reshape(N, D)
+  out = (w.T.dot(x_reshaped.T) + b.reshape(b.shape[0], 1)).T
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -50,7 +53,16 @@ def affine_backward(dout, cache):
   #############################################################################
   # TODO: Implement the affine backward pass.                                 #
   #############################################################################
-  pass
+  print(f"dout {dout.shape}")
+  print(f"x {x.shape}")
+  print(f"w {w.shape}")
+  N = x.shape[0]
+  input_shape = x.shape[1:]
+  x_reshaped = x.reshape(N, np.prod(input_shape))
+
+  dx = dout.dot(w.T).reshape(N, *input_shape)
+  dw = dout.T.dot(x_reshaped).T#.reshape(N, *input_shape)
+  db = np.sum(dout, axis=0)#.reshape(N, *input_shape)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -72,7 +84,7 @@ def relu_forward(x):
   #############################################################################
   # TODO: Implement the ReLU forward pass.                                    #
   #############################################################################
-  pass
+  out = np.maximum(x, 0)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -95,11 +107,52 @@ def relu_backward(dout, cache):
   #############################################################################
   # TODO: Implement the ReLU backward pass.                                   #
   #############################################################################
-  pass
+  dx = dout
+  dx[cache <= 0] = 0
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
   return dx
+
+def convert(img):
+  """
+  input: img: (C, H, W)
+  output: out: (H, W, C)
+  """
+  (C, H, W) = img.shape
+  row_list = []
+  for r in range(H):
+    col_list = []
+    for c in range(W):
+      pixel = img[:, r, c]
+      col_list.append(pixel)
+    row_list.append(np.array(col_list))
+  out = np.array(row_list)
+  assert(out.shape == (H, W, C))
+  return out
+
+def pad_channel(pad, single_channel):
+  return np.pad(single_channel, pad, "constant", constant_values=int(0))
+
+def convolve(img, kernel, bias, stride, outDim):
+  """
+  img: (H, W, C)
+
+  """
+  (H, W, C) = img.shape
+  (HH, WW, CC) = kernel.shape
+  assert(C == CC)
+
+  (outH, outW) = outDim
+  out = np.zeros(outDim)
+  # print(f"kernel: {kernel}")
+  # print(f"H-HH = {H}-{HH} : {H-HH}")
+  # print(f"stride: {stride}")
+  for r in range(0, H-HH, stride):
+    for c in range(0, W-WW, stride):
+      out[r][c] = np.sum(img[r:r+WW,c:c+HH,:] * kernel) + bias
+      # print(f"out[{r}, {c}]: {out[r][c]}")
+  return out
 
 
 def conv_forward_naive(x, w, b, conv_param):
@@ -126,11 +179,69 @@ def conv_forward_naive(x, w, b, conv_param):
   - cache: (x, w, b, conv_param)
   """
   out = None
+  (N, C, H, W) = x.shape
+  (F, _, HH, WW) = w.shape
   #############################################################################
   # TODO: Implement the convolutional forward pass.                           #
   # Hint: you can use the function np.pad for padding.                        #
   #############################################################################
-  pass
+  stride = conv_param["stride"]
+  pad = conv_param["pad"]
+  print(f"stride: {stride}")
+  print(f"pad: {pad}")
+  outH = int(1 + (H + 2 * pad - HH) / stride)
+  outW = int(1 + (W + 2 * pad - WW) / stride)
+
+  #adjust kernel shapes
+  new_w = np.zeros(shape=(F, HH, WW, C))
+  for fi, f in enumerate(w):
+    new_w[fi] = convert(f)
+
+  #add padding to img and adjust img shape
+  padded_img = np.zeros(shape=(N, H+pad*2, W+pad*2, C))
+  for ii, img in enumerate(x):
+    img_channels_first = []
+    for chi, ch in enumerate(img):
+      img_channels_first.append(pad_channel(pad, ch))
+    padded_img[ii] = convert(np.array(img_channels_first))
+
+  #adjust image shapes
+  out = np.zeros(shape=(N, F, outH, outW))
+  for ii, img in enumerate(padded_img):
+    for ki, kernel in enumerate(new_w):
+      out[ii][ki] = convolve(img, kernel, b[ki], stride, (outH, outW))
+  # for ii, img in enumerate(padded_img):
+  #   #convert to (H, W, C)
+  #   out[ii] = convert(img)
+    #get kernel and bias
+    #kernel, bias = 
+    #convolve
+    #img = convolve(img, kernel, bias, stride)
+
+  # image_list = []
+  # for img_i in range(N):
+  #   filter_list = []
+  #   for fi in range(F):
+  #     channel_list = []
+  #     for ch in range(C):
+  #       img = np.pad(x[img_i][ch], pad, "constant", constant_values=int(0))
+  #       (trueH, trueW) = img.shape
+  #       kernel = w[fi][ch]
+  #       bias = b[fi]
+  #       r, row_list = 0, []
+  #       while r < trueH - HH:
+  #         row = []
+  #         c = 0
+  #         while c < trueW - WW:
+  #           field = img[r:r+HH-1, c:c+WW-1]
+  #           row.append(np.sum(kernel.dot(field)) + bias)
+  #           c += stride
+  #         row_list.append(row)
+  #         r += stride
+  #       channel_list.append(row_list)
+  #     filter_list.append(channel_list)
+  #   image_list.append(filter_list)
+  # out = np.array(image_list)    
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
