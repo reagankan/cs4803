@@ -90,7 +90,7 @@ def two_layer_net(X, model, y=None, reg=0.0):
   relu_output = np.maximum(fc1_output, 0) #relu
   fc2_output = W2.T.dot(relu_output) + b2.reshape(C, 1) #second layer
   scores = fc2_output.T
-  assert(scores.shape == (N, C))
+  #assert(scores.shape == (N, C))
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
@@ -166,8 +166,6 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # and biases. Store the results in the grads dictionary. For example,       #
   # grads['W1'] should store the gradient on W1, and be a matrix of same size #
   #############################################################################
-
-  grads = {}
   
   """Fully Connected Layer 2
   follow format from lecture notes
