@@ -187,8 +187,8 @@ def conv_forward_naive(x, w, b, conv_param):
   #############################################################################
   stride = conv_param["stride"]
   pad = conv_param["pad"]
-  print(f"stride: {stride}")
-  print(f"pad: {pad}")
+  # print(f"stride: {stride}")
+  # print(f"pad: {pad}")
   outH = int(1 + (H + 2 * pad - HH) / stride)
   outW = int(1 + (W + 2 * pad - WW) / stride)
 
@@ -234,7 +234,25 @@ def conv_backward_naive(dout, cache):
   #############################################################################
   # TODO: Implement the convolutional backward pass.                          #
   #############################################################################
-  pass
+  (x, w, b, conv_param) = cache
+  (N, C, H, W) = x.shape
+  (F, _, HH, WW) = w.shape
+  stride = conv_param["stride"]
+  pad = conv_param["pad"]
+
+  dx, dw, db = np.zeros_like(x), np.zeros_like(w), np.zeros_like(b)
+
+  for n in range(N):
+    #add padding
+    padded_dx = np.pad(dx[n,:,:,:], ((0,0),(pad,pad),(pad,pad)), 'constant')
+    padded_img = np.pad(x[n,:,:,:], ((0,0),(pad,pad),(pad,pad)), 'constant')
+    for f in range(F):
+      for r in range(0, H, stride):
+        for c in range(0, W, stride):
+          padded_dx[:, r:r+HH, c:c+WW] += w[f,:,:,:] * dout[n,f,int(r/stride),int(c/stride)]
+          dw[f,:,:,:] += padded_img[:, r:r+HH, c:c+WW] * dout[n,f,int(r/stride),int(c/stride)]
+          db[f] += dout[n,f,int(r/stride),int(c/stride)]
+    dx[n,:,:,:] = padded_dx[:,pad:-pad,pad:-pad] #remove pad
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
