@@ -67,7 +67,7 @@ class ClassifierTrainer(object):
     train_acc_history = []
     val_acc_history = []
     for it in range(num_iters):
-      if it % 10 == 0:  print('starting iteration ', it)
+      if it % 1000 == 0 and False:  print('starting iteration ', it)
 
       # get batch of data
       if sample_batches:
