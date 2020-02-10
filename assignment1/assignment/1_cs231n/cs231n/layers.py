@@ -148,9 +148,9 @@ def convolve(img, kernel, bias, stride, outDim):
   # print(f"kernel: {kernel}")
   # print(f"H-HH = {H}-{HH} : {H-HH}")
   # print(f"stride: {stride}")
-  for r in range(0, H-HH, stride):
-    for c in range(0, W-WW, stride):
-      out[r][c] = np.sum(img[r:r+WW,c:c+HH,:] * kernel) + bias
+  for r in range(0, H-HH+1, stride):
+    for c in range(0, W-WW+1, stride):
+      out[int(r/stride)][int(c/stride)] = np.sum(img[r:r+WW,c:c+HH,:] * kernel) + bias
       # print(f"out[{r}, {c}]: {out[r][c]}")
   return out
 
@@ -205,43 +205,11 @@ def conv_forward_naive(x, w, b, conv_param):
       img_channels_first.append(pad_channel(pad, ch))
     padded_img[ii] = convert(np.array(img_channels_first))
 
-  #adjust image shapes
+  #convolve
   out = np.zeros(shape=(N, F, outH, outW))
   for ii, img in enumerate(padded_img):
     for ki, kernel in enumerate(new_w):
-      out[ii][ki] = convolve(img, kernel, b[ki], stride, (outH, outW))
-  # for ii, img in enumerate(padded_img):
-  #   #convert to (H, W, C)
-  #   out[ii] = convert(img)
-    #get kernel and bias
-    #kernel, bias = 
-    #convolve
-    #img = convolve(img, kernel, bias, stride)
-
-  # image_list = []
-  # for img_i in range(N):
-  #   filter_list = []
-  #   for fi in range(F):
-  #     channel_list = []
-  #     for ch in range(C):
-  #       img = np.pad(x[img_i][ch], pad, "constant", constant_values=int(0))
-  #       (trueH, trueW) = img.shape
-  #       kernel = w[fi][ch]
-  #       bias = b[fi]
-  #       r, row_list = 0, []
-  #       while r < trueH - HH:
-  #         row = []
-  #         c = 0
-  #         while c < trueW - WW:
-  #           field = img[r:r+HH-1, c:c+WW-1]
-  #           row.append(np.sum(kernel.dot(field)) + bias)
-  #           c += stride
-  #         row_list.append(row)
-  #         r += stride
-  #       channel_list.append(row_list)
-  #     filter_list.append(channel_list)
-  #   image_list.append(filter_list)
-  # out = np.array(image_list)    
+      out[ii][ki] = convolve(img, kernel, b[ki], stride, (outH, outW)) 
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -292,7 +260,19 @@ def max_pool_forward_naive(x, pool_param):
   #############################################################################
   # TODO: Implement the max pooling forward pass                              #
   #############################################################################
-  pass
+  (N, C, H, W) = x.shape
+  HH = pool_param["pool_height"]
+  WW = pool_param["pool_width"]
+  stride = pool_param["stride"]
+  outW = int((W-WW)/stride+1)
+  outH = int((H-HH)/stride+1)
+  out = np.zeros((N, C, outH, outW))
+  for ii, img in enumerate(x):
+    for ci, ch in enumerate(img):
+      for r in range(0, H-HH+1, stride):
+        for c in range(0, W-WW+1, stride):
+          out[ii][ci][int(r/stride)][int(c/stride)] = np.max(ch[r:r+HH, c:c+WW])
+          #print(f"ch[{r}:{r+HH}][{c}:{c+WW}]: {ch[r:r+HH, c:c+WW]} --> {out[ii][ci][int(r/stride)][int(c/stride)]}")
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -315,7 +295,23 @@ def max_pool_backward_naive(dout, cache):
   #############################################################################
   # TODO: Implement the max pooling backward pass                             #
   #############################################################################
-  pass
+  (x, pool_param) = cache
+  # print(f"dout shape: {dout.shape}")
+  # print(f"x shape: {x.shape}")
+
+  dx = np.zeros_like(x)
+
+  (N, C, H, W) = x.shape
+  HH = pool_param["pool_height"]
+  WW = pool_param["pool_width"]
+  stride = pool_param["stride"]
+  for ii, img in enumerate(x):
+    for ci, ch in enumerate(img):
+      for r in range(0, H-HH+1, stride):
+        for c in range(0, W-WW+1, stride):
+          bigIndex = np.argmax(ch[r:r+HH, c:c+WW])
+          bigR, bigC = int(bigIndex/stride), bigIndex%stride
+          dx[ii][ci][r+bigR][c+bigC] = dout[ii][ci][int(r/stride)][int(c/stride)]
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
