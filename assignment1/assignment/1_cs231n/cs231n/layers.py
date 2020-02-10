@@ -53,9 +53,9 @@ def affine_backward(dout, cache):
   #############################################################################
   # TODO: Implement the affine backward pass.                                 #
   #############################################################################
-  print(f"dout {dout.shape}")
-  print(f"x {x.shape}")
-  print(f"w {w.shape}")
+  # print(f"dout {dout.shape}")
+  # print(f"x {x.shape}")
+  # print(f"w {w.shape}")
   N = x.shape[0]
   input_shape = x.shape[1:]
   x_reshaped = x.reshape(N, np.prod(input_shape))
