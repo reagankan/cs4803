@@ -49,6 +49,12 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 parser.add_argument('--cifar10-dir', default='data',
                     help='directory that contains cifar-10-batches-py/ '
                          '(downloaded automatically if necessary)')
+parser.add_argument('--opt',
+                    choices=['adam', 'adadelta', 'adagrad', 'SGD'],
+                    help='which optimizer to train/evaluate')
+parser.add_argument('--loss',
+                    choices=['softmax', 'SVM'],
+                    help='which loss function to train/evaluate')
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 torch.manual_seed(args.seed)
@@ -101,6 +107,11 @@ else:
     raise Exception('Unknown model {}'.format(args.model))
 # cross-entropy loss function
 criterion = F.cross_entropy
+if args.model == 'mymodel':
+    ## select loss function
+    if args.loss == 'SVM':
+        print('SVM loss function is used.')
+        criterion = F.multi_margin_loss
 if args.cuda:
     model.cuda()
 
@@ -108,7 +119,24 @@ if args.cuda:
 # TODO: Initialize an optimizer from the torch.optim package using the
 # appropriate hyperparameters found in args. This only requires one line.
 #############################################################################
-pass
+#print(f'lr = {args.lr}')
+#print(f'momentum = {args.momentum}')
+#print(f'weight decay = {args.weight_decay}')
+optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+if args.model == 'mymodel':
+    ## select optimizer
+    if args.opt == 'adam':
+        print('Adam optimizer is used.')
+        optimizer = optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
+    elif args.opt == 'adadelta':
+        print('AdaDelta optimizer is used.')
+        optimizer = optim.Adadelta(model.parameters(), args.lr, weight_decay=args.weight_decay)
+    elif args.opt == 'adagrad':
+        print('AdaGrad optimizer is used.')
+        optimizer = optim.Adagrad(model.parameters(), args.lr, weight_decay=args.weight_decay)
+    else:
+        optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+
 #############################################################################
 #                             END OF YOUR CODE                              #
 #############################################################################
@@ -125,13 +153,20 @@ def train(epoch):
     for batch_idx, batch in enumerate(train_loader):
         # prepare data
         images, targets = Variable(batch[0]), Variable(batch[1])
+        #print(f'batch_idx = {batch_idx}')
+        #print(f'images shape = {images[0]}')
+        #print(f'tagets shape = {targets.shape}')
         if args.cuda:
             images, targets = images.cuda(), targets.cuda()
         #############################################################################
         # TODO: Update the parameters in model using the optimizer from above.
         # This only requires a couple lines of code.
         #############################################################################
-        pass
+        optimizer.zero_grad()
+        output = model(images)
+        loss = criterion(output, targets)
+        loss.backward()
+        optimizer.step()
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
