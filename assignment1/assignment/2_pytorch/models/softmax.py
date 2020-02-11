@@ -18,7 +18,9 @@ class Softmax(nn.Module):
         #############################################################################
         # TODO: Initialize anything you need for the forward pass
         #############################################################################
-        pass
+        self.in_features = np.dot(im_size[0],np.dot(im_size[1],im_size[2]))
+        self.fc1 = nn.Linear(self.in_features, n_classes)
+        #self.softmax = nn.softmax
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -43,7 +45,12 @@ class Softmax(nn.Module):
         #############################################################################
         # TODO: Implement the forward pass. This should take very few lines of code.
         #############################################################################
-        pass
+        #x = torch.flatten(images,1)
+        sizes = images.size()
+        #print(sizes)
+        x = images.view(sizes[0],self.in_features)
+        #print(f'x shape = {x.shape}')
+        scores = self.fc1(x)
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################

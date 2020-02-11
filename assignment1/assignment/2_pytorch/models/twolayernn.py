@@ -20,7 +20,10 @@ class TwoLayerNN(nn.Module):
         #############################################################################
         # TODO: Initialize anything you need for the forward pass
         #############################################################################
-        pass
+        self.in_features = np.dot(im_size[0],np.dot(im_size[1],im_size[2]))
+        self.fc1 = nn.Linear(self.in_features, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, n_classes)
+
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -45,7 +48,15 @@ class TwoLayerNN(nn.Module):
         #############################################################################
         # TODO: Implement the forward pass. This should take very few lines of code.
         #############################################################################
-        pass
+        #x = torch.flatten(images,1)
+        sizes = images.size()
+        #print(sizes)
+        x = images.view(sizes[0],self.in_features)
+        #print(f'x shape = {x.shape}')
+        x = self.fc1(x)
+        x = F.relu(x)
+        scores = self.fc2(x)
+
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
