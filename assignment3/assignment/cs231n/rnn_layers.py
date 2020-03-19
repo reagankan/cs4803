@@ -140,15 +140,15 @@ def rnn_forward(x, h0, Wx, Wh, b):
     prev_h = h0
     h, cache = [], []
     for t in range(T):
+        prev_h, cache_t = rnn_step_forward(x[:, t, :], prev_h, Wx, Wh, b)
+        h.append(prev_h)
+        cache.append(cache_t)
         #print("x[t] type: %s" % type(x[:,t,:]))
         #print("prev_h type: %s" % type(prev_h))
         #print(f"prev_h shape: {prev_h.shape}")
         #print("Wx type: %s" % type(Wx))
         #print("Wh type: %s" % type(Wh))
         #print("b type: %s" % type(b))
-        prev_h, cache_t = rnn_step_forward(x[:, t, :], prev_h, Wx, Wh, b)
-        h.append(prev_h)
-        cache.append(cache_t)
     h = np.array(h).swapaxes(0, 1) #reshape(N, T, H) is BAD.
     #print(f"h: {h}")
     cache = np.array(cache)

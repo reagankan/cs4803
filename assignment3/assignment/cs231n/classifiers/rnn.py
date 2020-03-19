@@ -75,7 +75,7 @@ class CaptioningRNN(object):
             self.params[k] = v.astype(self.dtype)
 
 
-    def loss(self, features, captions):
+    def loss(self, features, captions, verbose=False):
         """
         Compute training-time loss for the RNN. We input image features and
         ground-truth captions for those images, and use an RNN (or LSTM) to compute
@@ -137,7 +137,67 @@ class CaptioningRNN(object):
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
         ############################################################################
-        pass
+        # shapes
+        N, D = features.shape
+        _, T = captions.shape
+        _, H = W_proj.shape
+        V, W = W_embed.shape
+
+        #forward pass, 5 steps.
+        #**1. image features (N, D) -> hidden state (N, H)
+        h0, af_cache = affine_forward(features, W_proj, b_proj)
+
+        #**2. captions_in --wordembedded--> vector (N, T, W)
+        embeded, we_cache = word_embedding_forward(captions_in, W_embed)
+
+        #**3. hidden state vectors (N, T, H)
+        if self.cell_type == "rnn":
+            hidden_states, rnn_f_cache = rnn_forward(embeded, h0, Wx, Wh, b)
+        elif self.cell_type == "lstm":
+            pass
+
+        #**4. compute scores (N, T, V)
+        scores, scores_cache = temporal_affine_forward(hidden_states, W_vocab, b_vocab)
+
+        #**5. compute loss from captions_out(as gt)
+        loss, dx = temporal_softmax_loss(scores, captions_out, mask)
+
+        #backward
+        # In the backward pass you will need to compute the gradient of the loss   #
+        # with respect to all model parameters. Use the loss and grads variables   #
+        # defined above to store loss and gradients; grads[k] should give the      #
+        # gradients for self.params[k].                                            #
+
+        #print(self.params.keys())
+        #dict_keys(['W_embed', 'W_proj', 'b_proj', 'Wx', 'Wh', 'b', 'W_vocab', 'b_vocab'])
+        up_grad = dx
+        up_grad, dw, db = temporal_affine_backward(up_grad, scores_cache) #args: upstream_grad, and cache
+        grads["W_vocab"] = dw
+        grads["b_vocab"] = db
+
+        up_grad, dh0, dWx, dWh, db = rnn_backward(up_grad, rnn_f_cache)
+        grads["Wx"] = dWx
+        grads["Wh"] = dWh
+        grads["b"] = db
+
+        #ordering of next two aren't important
+        dw = word_embedding_backward(up_grad, we_cache)
+        grads["W_embed"] = dw
+
+        up_grad = dh0
+        up_grad, dw, db = affine_backward(up_grad, af_cache)
+        grads["W_proj"] = dw
+        grads["b_proj"] = db
+
+        if verbose:
+            print(f"N: {N}, D: {D}, T: {T}, H: {H}, V: {V}, W: {W}")
+            def sh(s, d={N:"N", D:"D", T:"T",T-1:"T-1", H:"H", V:"V", W:"W"}):
+                mid = ", ".join([str(d[dim]) for i, dim in enumerate(s)])
+                return "(" + mid + ")"
+            print(f"image features {sh(features.shape)} -> hidden state {sh(h0.shape)}")
+            print(f"embeded shape: {embeded.shape}")
+            print(f"captions_in shape: {captions_in.shape}")
+            print(f"captions_in ----> vector {sh(embeded.shape)}")
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -145,7 +205,7 @@ class CaptioningRNN(object):
         return loss, grads
 
 
-    def sample(self, features, max_length=30):
+    def sample(self, features, max_length=30, verbose=False):
         """
         Run a test-time forward pass for the model, sampling captions for input
         feature vectors.
@@ -199,7 +259,36 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
-        pass
+        N, D = features.shape
+        T = max_length
+
+        prev_h, af_cache = affine_forward(features, W_proj, b_proj)
+        prev_word = np.zeros((N, 1)) + self._start
+        prev_word = prev_word.astype(int)
+        if verbose:
+            print(f"captions: {captions.shape}")
+            print(f"prev_h : {prev_h.shape}")
+            print(f"W_vocab: {W_vocab.shape}")
+            print(f"prev_word: {prev_word}")
+        for t in range(T):
+            embeded_word, we_cache = word_embedding_forward(prev_word, W_embed)
+            if verbose:
+                print(f"iter: {t}")
+                print(f"embeded word: {embeded_word.shape}")
+                print(f"prev_h : {prev_h.shape}")
+            prev_h, cache_t = rnn_step_forward(embeded_word[:,0,:], prev_h, Wx, Wh, b) #T = 1
+            d1, d2 = prev_h.shape
+            prev_h_pad = prev_h.reshape(d1, 1, d2)
+            scores, scores_cache = temporal_affine_forward(prev_h_pad, W_vocab, b_vocab)
+            ind = np.argmax(scores, axis=0)
+            sampled_word = W_vocab[ind]
+            if verbose:
+                print(f"prev_h : {prev_h.shape}")
+                print(f"prev_h_pad : {prev_h_pad.shape}")
+                print(f"scores: {scores.shape}")
+                print(f"ind: {ind.shape}")
+                print(f"sampled_word: {sampled_word.shape}")
+                print(f"captioned_wd: {captions.shape}")
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
