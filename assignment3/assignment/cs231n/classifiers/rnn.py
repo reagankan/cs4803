@@ -288,8 +288,11 @@ class CaptioningRNN(object):
             d1, d2 = prev_h.shape
             prev_h_pad = prev_h.reshape(d1, 1, d2)
             scores, scores_cache = temporal_affine_forward(prev_h_pad, W_vocab, b_vocab)
-            ind = np.argmax(scores, axis=0)
-            sampled_word = W_vocab[ind]
+            # print(f"vocab size: {len(self.word_to_idx)}")
+            # print(f"scores: {scores.shape}")
+            # print(f"W_vocab: {W_vocab.shape}")
+            ind = np.argmax(scores, axis=2)
+            sampled_word = W_vocab[:,ind]
             if verbose:
                 print(f"prev_h : {prev_h.shape}")
                 print(f"prev_h_pad : {prev_h_pad.shape}")
