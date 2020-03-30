@@ -152,9 +152,9 @@ class CaptioningRNN(object):
 
         #**3. hidden state vectors (N, T, H)
         if self.cell_type == "rnn":
-            hidden_states, rnn_f_cache = rnn_forward(embeded, h0, Wx, Wh, b)
+            hidden_states, forward_cache = rnn_forward(embeded, h0, Wx, Wh, b)
         elif self.cell_type == "lstm":
-            pass
+            hidden_states, forward_cache = lstm_forward(embeded, h0, Wx, Wh, b)
 
         #**4. compute scores (N, T, V)
         scores, scores_cache = temporal_affine_forward(hidden_states, W_vocab, b_vocab)
@@ -175,7 +175,10 @@ class CaptioningRNN(object):
         grads["W_vocab"] = dw
         grads["b_vocab"] = db
 
-        up_grad, dh0, dWx, dWh, db = rnn_backward(up_grad, rnn_f_cache)
+        if self.cell_type == "rnn":
+            up_grad, dh0, dWx, dWh, db = rnn_backward(up_grad, forward_cache)
+        elif self.cell_type == "lstm":
+            up_grad, dh0, dWx, dWh, db = lstm_backward(up_grad, forward_cache)
         grads["Wx"] = dWx
         grads["Wh"] = dWh
         grads["b"] = db
@@ -262,6 +265,7 @@ class CaptioningRNN(object):
         N, D = features.shape
         T = max_length
 
+        prev_c = 0 #for lstm
         prev_h, af_cache = affine_forward(features, W_proj, b_proj)
         prev_word = np.zeros((N, 1)) + self._start
         prev_word = prev_word.astype(int)
@@ -276,7 +280,11 @@ class CaptioningRNN(object):
                 print(f"iter: {t}")
                 print(f"embeded word: {embeded_word.shape}")
                 print(f"prev_h : {prev_h.shape}")
-            prev_h, cache_t = rnn_step_forward(embeded_word[:,0,:], prev_h, Wx, Wh, b) #T = 1
+            if self.cell_type == "rnn":
+                prev_h, cache_t = rnn_step_forward(embeded_word[:,0,:], prev_h, Wx, Wh, b) #T = 1
+            elif self.cell_type == "lstm":
+                prev_h, prev_c, cache_t = lstm_step_forward(embeded_word[:,0,:], prev_h, prev_c, Wx, Wh, b) #T = 1
+
             d1, d2 = prev_h.shape
             prev_h_pad = prev_h.reshape(d1, 1, d2)
             scores, scores_cache = temporal_affine_forward(prev_h_pad, W_vocab, b_vocab)
