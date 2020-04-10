@@ -50,11 +50,40 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
         the value of state s
     """
 
-    value_function = np.zeros(nS)
+    value_function = np.ones(nS)
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    pass
+    diff = tol
+    #print(f'policy = {policy}')
+    while (diff >= tol):
+        new_value_func = np.zeros(nS)
+        for state in range(nS):
+            action = policy[state]
+            length = len(P[state][action])
+            curr_valu = np.zeros(length)
+            for i in range(length):
+                prob = P[state][action][i][0]
+                nexS = P[state][action][i][1]
+                rewd = P[state][action][i][2]
+                trmnl = P[state][action][i][3]
+                future_valu = 0
+                if trmnl == False:
+                    future_valu = value_function[nexS]
+                curr_valu[i] = prob * (rewd + gamma * future_valu)
+                
+            sum_valu = curr_valu.sum()
+            new_value_func[state] = sum_valu
+            #print(f'curr_valu = {curr_valu}')
+            #print(f'sum_valu = {sum_valu}')
+        #print(f'new_value_func = {new_value_func}')
+        #print(f'value_function = {value_function}')
+        #compute differential for current iteration
+        value_diff = abs(new_value_func - value_function)
+        diff = value_diff.max()
+        #print(f'diff = {diff}')
+        value_function = new_value_func
+    
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################
@@ -86,7 +115,23 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    pass
+    for state in range(nS):
+        curr_valu = np.zeros(nA)
+        for action in range(nA):
+            length = len(P[state][action])
+            for i in range(length):
+                prob = P[state][action][i][0]
+                nexS = P[state][action][i][1]
+                rewd = P[state][action][i][2]
+                trmnl = P[state][action][i][3]
+                future_valu = 0
+                if trmnl == False:
+                    future_valu = value_from_policy[nexS]
+                curr_valu[action] += rewd + prob * (gamma * future_valu)
+        best_act = curr_valu.argmax()
+        new_policy[state] = best_act
+        #print(f'curr_valu = {curr_valu}')
+        #print(f'best_act = {best_act}')
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################
@@ -117,7 +162,23 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    pass
+    diff = tol
+    while (diff >= tol):
+        inner_diff = tol
+        inner_value = np.zeros(nS)
+        #print(f'policy = {policy}')
+        while (inner_diff >= tol):
+            inner_new_value = policy_evaluation(P, nS, nA, policy, gamma=gamma, tol=tol)
+            inner_value_diff = abs(inner_new_value - inner_value)
+            #print(f'inner_value_diff = {inner_value_diff}')
+            inner_diff = inner_value_diff.max()
+            inner_value = inner_new_value
+        new_value_func = inner_value
+        policy = policy_improvement(P, nS, nA, new_value_func, policy, gamma=gamma)
+        value_diff = abs(new_value_func - value_function)
+        diff = value_diff.max()
+        value_function = new_value_func
+        #print(f'value_function = {value_function}')
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################
@@ -147,7 +208,36 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    pass
+    diff = tol 
+    while (diff >= tol):
+        new_value_func = np.zeros(nS)
+        for state in range(nS):
+            curr_valu = np.zeros(nA)
+            for action in range(nA):
+                length = len(P[state][action])
+                #curr_valu = np.zeros(length)
+                for i in range(length):
+                    prob = P[state][action][i][0]
+                    nexS = P[state][action][i][1]
+                    rewd = P[state][action][i][2]
+                    trmnl = P[state][action][i][3]
+                    future_valu = 0
+                    if trmnl == False:
+                        future_valu = value_function[nexS]
+                    curr_valu[action] += prob * (rewd + gamma * future_valu)
+            max_valu = curr_valu.max()
+            best_act = curr_valu.argmax()
+            new_value_func[state] = max_valu
+            policy[state] = best_act
+            #print(f'curr_valu = {curr_valu}')
+            #print(f'max_valu = {max_valu}')
+        #print(f'new_value_func = {new_value_func}')
+        #print(f'value_function = {value_function}')
+        #compute differential for current iteration
+        value_diff = abs(new_value_func - value_function)
+        diff = value_diff.max()
+        #print(f'diff = {diff}')
+        value_function = new_value_func
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################
@@ -172,7 +262,7 @@ def render_single(env, policy, max_steps=100, show_rendering=True):
     for t in range(max_steps):
         if show_rendering:
             env.render()
-        time.sleep(0.25)
+        time.sleep(0.0025) #original 0.25
         a = policy[ob]
         ob, rew, done, _ = env.step(a)
         episode_reward += rew
