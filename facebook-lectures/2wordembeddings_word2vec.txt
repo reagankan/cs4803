@@ -1,0 +1,67 @@
+Outline
+Word Embeddings (word2vec)
+Graph Embeddings
+Applications (world2vec) use in downstream tasks(clustering, recommendations)
+Discussions
+
+
+Goal: map objects to Vectors through a trainable function
+idea: distance in VS should represent similarity of objects(text, image, video)
+fix: neural net or word2vec
+
+
+Words as discrete symbols
+Idea...
+traditional NLP, words = discrete symbols.
+e.g. localist representation (1-hot encoding) therefore, vector dim = # words in lang(e.g. 500K)
+Problems...
+search: "Seattle Motel"
+get 2 orthogonal 1-hot vectors. NO notion of similarity.
+fix...
+try to use WordNet's listo of synonyms. known to be bad.
+???
+
+Words w.r.t their context
+Distributional semantics: meaning derived from surrounding words.
+???
+
+Word vectors (word embeddings)
+word -> dense vector(s.t. ???)
+???
+
+Word2vec: overview
+1. scan text for center words c, and context(outside) words o in O.
+2. compute probability p(O=o|c)???
+3. learn how to maximize probability. --> objective function
+
+objective function
+likelihood = 
+J(theta)
+params = theta = vectors!!!
+
+compute prob: looks like softmax?...yes!
+p(o|c) = exp(UoTVc) / sumexp(...)
+we know how to do gradient descent for this!!!
+
+alternative distance func: cosine distance, L2 dist.
+hinge loss when softmax does not do well. 
+some cases we want to normalize, then do something else.
+
+slide shows PCA of trained word2vec. obj func works. 
+¿why does this work? no answer. Zsolt has read some theory papers.
+
+Why 2 vectors? easier opt. avg of both.
+
+Variants: Skip-Grams(lecture so far), and Continuous BOW
+Efficiency boost: negative sampling. A subset of words(size: 5 - 10). essentially downsamples.
+
+Intrinsic/Extrinsic Evaluation of Vectors.
+...???
+
+Graph Embeddings: node -> vector (not the same as Graph NN)
+graphs: recommender sys(graph from supervised data), knowledge graph, social network
+
+e.g.  people + items(people, movies, jobs)
+
+fell asleep
+woke up at world2vec

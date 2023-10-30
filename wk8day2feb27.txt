@@ -1,0 +1,36 @@
+slide 15
+Smart weight initialization
+"Try linear clf from diff stages"
+Cut off NN at an arb layer, by putting linear clf there. 
+intution: bottom of NN learns general patterns.
+
+
+transfer learning
+CNN pretrained on imageNet. CNN outputs 4096. these 4096 encode useful info about images.
+put this CNN at the bottom of your network and they build up for your task specifically.
+
+Data is still king. Easiest way to improve is to Get More Data.
+slide 19 has learning curves as a function of data size
+the plt at the RHS shows the spectrum of improving performance by either improve architecture vs get more data.
+sometimes better to just pay for data in industry. Currently, not sure where the threshold is.
+why is there a threshold, can't inf data solve prob? NO, data will always have noise/errors.
+
+
+Naive sequence with MLP
+fixed size window.
+word -> vector -> NN -> map to 20K codomain of "next word"
+
+new idea: weight sharing. and layers that remember history
+weight sharing will work with backprop, recall how gradients work for nodes that send output to diff nodes.
+can get tricky for many to many.
+must backprop along all possible paths.(many chain rules so many multiplications)
+update parameter must incorporate all incoming upstream gradients.(many summations)
+
+
+slide 46
+without inputs: St = f[theta](St-1). use same theta(set of weights) for all t.
+with inputs: St = f[theta](St-1, xt). use same theta(set of weights) for all t.
+
+New Words: Recurrent vs Recursive(graph vs chains)
+Types of RNN: vanilla Rnns, LSTM, Gated Recurrent Units
+

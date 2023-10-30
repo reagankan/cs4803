@@ -1,0 +1,100 @@
+Tues Feb 11, 2020
+--------------------------------------
+The art and science of data wrangling
+kristen M. altenburger and sam pepose
+facebok core data science and portal AI
+--------------------------------------
+
+data wrangling/cleaning. come in many steps in predictive pipeline.
+1. each step
+2. DL specifics of data wrangling.
+
+
+"Features are very important for ML" motivation
+many papers not reproducible due to data oragnization? 01 vs 10?
+
+Large Population. take sample(lots of lit;)
+Sample -> CV(train)>LearnModel + test(Model).
+
+Yelp might cleanup restaraunt scene. atlantic 2013 article.
+population: yelp data/inspection recordes merged to preidct restaurants with sever violations. 2006-2013 in Seattle
+
+1. Sample from Pop
+unhygenic score vs density(freq)
+basically: representative sampling is important. naive sampling can result in bad representation.
+shuffling data in validation is important. dataset may be inherently ordered. like CrowdSrc data from cs4641.
+
+fairness in ML is hard. Even excluding a restricted features may result in keeping unresttricted feature that proxy restricted ones.
+
+2. Cross Validation
+typical: k-fold CV. gets avg estimate of prediction error.
+Problem: Class imbalance: like crowdsourc data in cs4641. 99% are in label 1. 1% in label 2%
+fix: cost sensitive learning. like cancer class. FN is much worse than FP.
+fix: Syntheic minority oversampling. find a point (or synth point). find nearest neighbors. generate synthetic pts between them.
+fix: Zsolt. inverse gradient based on frequency of class.
+
+Best Practices
+random search vs grid search for hyper bergstra and bengio 2012
+confrim hyperparam range is sufficient such as plotting OOB error rate.
+temporal CV considerations.
+check for overfitting.
+
+3. Learning
+check for well calibrated model.
+x=mean predicted value vs. y=actual fraction of Yes.
+well calibrated -> curve close to y=x
+
+Regression: MSE, Visually analyze errors, Partial dependence plots(what are theses?)
+Classification: TP/FP/FN/TN/F1-score etc.
+Always have Baseline comparison. (FB: production team model)
+
+4. Reproducible. "Datasheets for datasets" Gebru et al. 2018
+random seeds.
+document each decision.
+
+
+Data Cleaning for DL
+Data Prep
+1. Clean up messiness
+b. outliers. if sampling is not rep, outliers may be important. if samplig is rep, can exclude outliers.
+a.  missing data mechanisms
+e.g. breast cancer
+Missing completely at random: liklihood of any data observation to be missing is random. caraccident. person cannot do surrvey.
+Missing at Random: likelihood of any data obserrvation to be missing depending on observed data features. Conditionally random.
+fix: gender(men less likely to be screen)
+Missing not at Random: likelihood depends onunobserved outcome. directly caused by what we are measuring. ladydies from cancer. cannot do survey.
+remove rows: easy, lose info. risking bias
+imputation: replacing values based on heuristic. mean/median/mode. Hot-deck(find similar rows) and copy over
+kNN, deep learned embeddings. cluster embeddings. find closest embeddings and use that as replacement.
+2. transform data for faster/better numerical otpimization
+image: color conversion. rgb
+text: Index:(Apple Orange, Pear) -> (0,1,2). BagofWords/TFIDF. Embedding.
+
+3. preprocess given domain info
+original data -> zero center(subtract out mean. lik in cs4641. get close to zero centered Gaussian) -> normalize (like in linalg).
+zero center: converge faster. like sigmoid(gradients around 0 are larger)
+
+Case study: Depth Estimation
+kinect gaming. originally used infrared.
+Clean
+infrared does not work well with some surfaces-> holes in data.
+knn(naive) noisy boundaries
+colorization (NYU Depth v2). expand regions.
+Transform
+use depth data as ground truth
+1 channel depth -> 3 channels
+horizontal disparity(inverse of depth) improve numerical stability. gaussian error distributions.
+height above ground
+angle with gravity
+*normally network needs to learn these.
+*handcraft these 3 channels to guide/jumpstart learning.
+other fix: 3d point clouds.
+
+
+Portal Team. Testing for bias on portal. Tracks user in frame. User can dance around.
+Bias: skin-tone, age, size, lighting, people location xyz, many more.
+2/3 time on data. 1/3 on algorithm.
+
+divide/slice data into each bias category
+be careful of bias creep(many inoccuous changes -> bias gradually)
+e.g. infants are small so hard.

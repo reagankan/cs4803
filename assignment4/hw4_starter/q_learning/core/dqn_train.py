@@ -123,34 +123,33 @@ class DQNTrain(QNTrain):
         #####################################################################
         # compute Q(s, a)
         outQ_allA = self.q_net.forward(state)
-        # print()
-        # print(f"outQ_allA: {outQ_allA.shape}")
-        # print(f"action: {action.shape}")
-        # specificA = torch.zeros_like(outQ_allA)
-        # specificA[action] = 1
-        # outQ = torch.gather(outQ_allA, dim=1, index=specificA.long())
-        # outQ = outQ_allA[:, action]
-        # print(outQ)
-
         outQ = outQ_allA.gather(1, action.view(-1, 1)).squeeze() #from hw2
 
         #compute Q_target(s', a')
         outQtar_allA = self.target_q_net.forward(next_state)
-        # specificA = torch.zeros_like(outQ_allA)
-        # specificA[action] = 1
-        # outQtarget = torch.gather(outQ_allA, dim=1, index=specificA.long())
-
-        outQtarget = outQtar_allA.gather(1, action.view(-1, 1)).squeeze()
 
         #compute Q_samp(s)
-        gamma = 1
-        outQsamp = reward
-        outQsamp[~done_mask] += gamma * torch.max(outQtarget[~done_mask])
+        outQsamp = torch.where(done_mask.byte(), reward, reward + self.config.gamma*torch.max(outQtar_allA, dim=1)[0])
+        # gamma = 1.0
+        # outQsamp = reward
+        # not_done_mask = 1 - done_mask
+        # big, big_ind = torch.max(outQtar_allA, dim=1)
+        # # print(f"not_done_mask: {not_done_mask}")
+        # # print(f"outQtar_allA.shape: {outQtar_allA.shape}")
+        # # # print(f"outQtarget.shape: {outQtarget.shape}")
+        # # print(f"big.shape: {big.shape}")
+        # # print(f"outQsamp[not_done_mask].shape: {outQsamp[not_done_mask].shape}")
+        # # print(f"not_done_mask==1.shape: {(not_done_mask == 1).shape}")
+        # # print(f"not_done_mask==1.shape: {(not_done_mask == 1)}")
+        # # print(torch.sum(not_done_mask))
+        # outQsamp[not_done_mask==1] = self.config.gamma * big[not_done_mask==1]# + reward[not_done_mask==1]
+        # # print(~done_mask + 1)
+        # # print(done_mask + ~done_mask + 1)
 
         #compute loss
         # print(f"outQsamp: {outQsamp.shape}")
         # print(f"outQ: {outQ.shape}")
-        loss = torch.pow(outQsamp - outQ, 2)
+        loss = torch.pow(outQsamp - outQ, 2).mean()
 
         #####################################################################
         #                             END OF YOUR CODE                      #
@@ -248,10 +247,13 @@ class DQNTrain(QNTrain):
         #   of the gradients using self.module_grad_norm on self.q_net
         #   AFTER calling backward.
         #####################################################################
+        #0.
+        self.optimizer.zero_grad()
+
         #1.
         s_batch = self.process_state(s_batch)
         a_batch = torch.from_numpy(a_batch).long()
-        r_batch = torch.from_numpy(r_batch)
+        r_batch = torch.from_numpy(r_batch).float()
         sp_batch = self.process_state(sp_batch)
         done_mask_batch = torch.from_numpy(done_mask_batch).long()
 
@@ -261,13 +263,12 @@ class DQNTrain(QNTrain):
         # print(f"DQNTrain.update_step.loss eval: {type(q_loss)} {q_loss.shape} {q_loss}")
 
         #3.
-        grads = q_loss.backward(q_loss)
-        
+        grads = q_loss.backward()
         self.optimizer.step()
         grad_norm_eval = self.module_grad_norm(self.q_net)
 
         #???? theoretically should have size: (batch size) , but logger expects scalar????
-        q_loss = q_loss.max()
+        # q_loss = q_loss.mean()
 
         #####################################################################
         #                             END OF YOUR CODE                      #

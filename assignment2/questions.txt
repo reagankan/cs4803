@@ -1,0 +1,9 @@
+Part 1.
+gradCam color highlights are off slightly.
+what should the class visualizations look like?
+
+
+Part 2.
+Style Transfer outputs are less intense/vibrant in color, but otherwise looks good.
+tv_loss: Formula SUM 1 to n-1 SUM 1 to n-1 -> error != 0
+Normalization 1/4, do div by 2 in the content or style loss func.

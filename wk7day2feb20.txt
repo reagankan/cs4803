@@ -1,0 +1,101 @@
+Review
+CNN architecture. conv, nonlin, pooling }* 
+Visualization: 
+    filter(kernel)
+        viz filter is not the best thing. cuz deep in net, hard to interpret.
+    activation maps
+    most activating image patches from image set.
+Google/FB has large networks cuz they have compute power.
+e.g. GoogLeNet, Inception, many others(hand pick and evolution)
+
+Final Layer: 4096 dim meaningful numbers
+use dim reduction(PCA or tnmse) to visualize distance btw vectors.
+
+
+new idea; Don't just look at weights/ look at gradients also.
+
+Which pizels matter? use occlusion maps.
+1. take image
+2. delete block of image. (ooclusion)
+3. put image through CNN. How do the probabilites change?
+4. look at heatmap generated from probs. How do the probabilites change?
+*this can help determine if model is bad or dataset is bad. biases exist.
+*<--> probabilities don't change much if you cover the parts you think should matter.
+pro: faithful
+con: expensive. require many forward passes.
+
+Saliency with Backprop
+score(before softmax) NOT prob(after softmax)
+what does softmax do? puts them in competition with each other. do not want this.
+want to see positive influences.
+1. forward pass: compute probs
+2. back pass: compute gradient of unormalized class score w.r.t. image pizels.
+Take abs value and max over RGB channels.
+*basically plotting gradient onto rbg channels to produce visualization
+*should highlight the important pixels.
+
+Saliency + Classical Segmentation w.o. supervision
+1. take saliency map
+2. do segmentation on saliency map and original image to get segment of orig image that matters most.
+
+Can we manipulate gradients so Saliency Maps are more interpretable?
+idea: this is heuristical no theoretical or rigorous math reason.
+DECONVNET: happens during backprop
+input: upstream gradient
+output: same gradient, but zero out negative gradients
+why? we want features that positively correlate to class labels.
+don't want features that make "dog image" look LESS like a dog.
+only want positive contributions.
+GUIDED BACKPROP: combo of DECONVNET AND RELU???
+*reduces noise in saliency maps
+
+NOTICE: saliency map for cat and dog look very similar. This means CNN is learning very generic things.
+hence the motivation for Grad-CAM 
+-perturb semantic neurons in the image and see how it affets te decision.
+image -> CNN -> feature maps right before FC-layers -> any task-specific network.(image class, image caption, visual q/a)-\
+                       /----------------tensors containing jacobians <--- backprop until CNN  <---------------------------|
+                       |-> take some sort of sum of the gradient of score w.r.t. feature map. (gives weighting for each channel)
+                       |-> apply relu to get output
+    *similar to attention mechanism. (given weights so we know how to weight).
+pros:
+don't have to change architecture of nn. 
+can also use for guided backprop
+pinpoints which channels/features are most important
+*Now saliency map can idenfity the correct region. e.g. look for dog in image of cat and dog. Heatmap highlight dog region
+
+
+Gradient Ascent on Pixels: Generate a synthetic image that maximally activates a neuron
+I* = argmax[I](f(I) +/-(?) r(I)), f = gradient(or score?), r = regularization
+1. init with all zeros or random or real image
+2. forward image to comput current scores. *skip softmax layer again!! for reasoning above.
+3. backprop to get gradient of neuron value w.r.t image pixels.
+4. make a small update to the image, to increase gradient. + instead of -
+5. goto 2.
+* CNN is already trained!
+
+Fooling Images/ Adversarial Examples. like optical illusions for humans
+*power of optimization with gradient descent
+1. start with arb image e.g. cat
+2. pick arb but diff class e.g. car
+3. modify image to maximize car attributes
+4. repeat until network is fooled. will think cat is a car.
+* extreme: change 1 pixel and fool NN
+* this was mentioned in 4641. imperceptable to Humans.
+* geometric theory that proves adding gaussian noise will give some defense
+* not unique to NN. linear classifier or svm can be fooled as well.
+
+
+Feature Inversion
+given a CNN feature vector for an image, find a new image that:
+matches the given feature vector
+looks natural (image prior regularization)
+
+e.g.
+first layers. generated images look very similar. low level things like edges
+later layers. generated images are very abstract.
+
+Side-effect --> Style Transfer!!! also works for MUSIC!!!
+1. extract content targets( CNN activatsion of all layers for the given content image)
+2. extract style targets(Gram matrices of #1) G = V.T.dot(V)
+how diff abstract features correlate with each other. handwavy for way Gram encodes style targets.
+nice outputs: normalized images, picked good layer, good regularization.

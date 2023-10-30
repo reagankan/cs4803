@@ -25,9 +25,9 @@ class LinearQNet(nn.Module):
         self.o_per_s = config.state_history
 
         
-        in_features = self.H * self.W * self.C * self.o_per_s
-        out_features = self.num_actions
-        self.layer = nn.Linear(in_features, out_features)
+        self.in_features = self.H * self.W * self.C * self.o_per_s
+        self.out_features = self.num_actions
+        self.layer = nn.Linear(self.in_features, self.out_features)
         if debug:
             print(f"num actions: {self.num_actions}")
             print(f"H: {self.H}")

@@ -1,0 +1,79 @@
+margaret lee
+
+feed-forward nn: not as good as cnn/rnn
+cnn and rnns are decades old. tailor for specific data
+cnn: grid structure and translation-invariant/scale invariant/composable.
+pooling -> invariance on grid. sacrifice higher resolution.
+rnn: sequential/causal order
+Two ways to deal with growing input.
+1. fixed mem size or window size
+2. reccurrent seq network.
+
+rnn: becomes as deep as sequence if unraveled into feedforwardnet
+hi+1 = f(hi, xi+1), {missed equ}
+
+what structures/data biases do attention/transformers have?
+
+input is a set (of vectors)?
+sets are permutation invariant: so is interesting data. like set of people.
+sparse representation of input
+no choice, input given that way, and want to use DL
+
+[sublte] att/trans are good at this. make determinations of structure at input time, rather than when building architecture.
+
+
+Naive: Bag of [smth]: product, max, sum ... any commutative operation.: bag like a set. perm-inv
+{m1 ... ms} -> 1/s * SUM(mi). take set of vectors -> single vector
+operation based on domain knowledge.
+surprisingly effective. e.g. of empirical results. recommender sys, generic word embeddings(word2vec), retriveal tasks
+failures of bag: convnets/vision + contextualized word vectors(ELMO -> BERT)
+
+NLP: do bags first(cuz if they work, they are lightweight)
+
+Attention: Weighting or prob distribution over inputs that depends on computational state and inputs
+hard: discrete var 
+soft: continuous var
+
+History
+CV: look at regions of an image.
+often: attention over the grid:
+given machines curretn state/history of climpses, where at at what scale should it loook next.
+Location NOT context/content based 
+
+Attention: NLP
+Alignment in machine translation: fo each word in the target, get a distriution over words in the source.
+soft: align(word) -> distribution of words
+hard: align(word) -> ??
+
+CV vs NLP; nlp optimize over(nlp), rather than focused on(cv)(rare in nlp, first in Bahdanau 2014).
+
+
+Attention -> dynamic weighted averages(bag)
+{m1 ... ms} -> 1/s * SUM(ai * mi)., ai is weight from attention.
+ai depends on state of the machine and the mi.
+
+standard approach for soft attention: softmax 
+e.g. in Bahdanau var_u is the hidden state at given token in a LSTM.
+ai = e^(uT.mi) / SUM[j](e^(uT * mj)
+
+attention is very generic: works for any set(like graphs).
+allows complex processing of any unstructed inputs.
+help sove prob with long dependencies..
+missed 2+ more items
+
+
+Mulit-hop attention: hop -> layer
+state varible u. sequential update of u.
+u updates: is modulated by attentionover input set.
+output: fixed set vector.
+
+ai = softmax(u_i.T * M)
+u_{i+1} <- SUM[j](aji * mj)
+
+Elman, at test time, sample from hidden layer and push back as input.
+LSTM: input -> single round -> output -> next round.
+memory network: multiple rounds of self reflection on input memory. 
+transformers: can use different memory layer(hop) at each level.
+
+
+

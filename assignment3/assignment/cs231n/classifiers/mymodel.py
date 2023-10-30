@@ -5,6 +5,7 @@ import numpy as np
 from cs231n.layers import *
 from cs231n.rnn_layers import *
 from cs231n.classifiers.rnn import CaptioningRNN
+from cs231n.captioning_solver import CaptioningSolver #need for multi-affinelayers
 
 class MyModel(CaptioningRNN):
     def __init__(self, word_to_idx, input_dim=512, wordvec_dim=128,
@@ -26,10 +27,26 @@ class MyModel(CaptioningRNN):
         self.params['W_prelstm'] /= np.sqrt(dim)
         self.params['b_prelstm'] = np.zeros(dim)
 
+        # self.params['W_prelstm1'] = np.random.randn(dim , dim)
+        # self.params['W_prelstm1'] /= np.sqrt(dim)
+        # self.params['b_prelstm1'] = np.zeros(dim)
+
+        # self.params['W_prelstm2'] = np.random.randn(dim , dim)
+        # self.params['W_prelstm2'] /= np.sqrt(dim)
+        # self.params['b_prelstm2'] = np.zeros(dim)
+
         dim = self.caption_dim * self.hidden_dim
         self.params['W_postlstm'] = np.random.randn(dim, dim)
         self.params['W_postlstm'] /= np.sqrt(dim)
         self.params['b_postlstm'] = np.zeros(dim)
+
+        # self.params['W_postlstm1'] = np.random.randn(dim, dim)
+        # self.params['W_postlstm1'] /= np.sqrt(dim)
+        # self.params['b_postlstm1'] = np.zeros(dim)
+        
+        # self.params['W_postlstm2'] = np.random.randn(dim, dim)
+        # self.params['W_postlstm2'] /= np.sqrt(dim)
+        # self.params['b_postlstm2'] = np.zeros(dim)
 
     def loss(self, features, captions, verbose=False):
         """
@@ -111,11 +128,11 @@ class MyModel(CaptioningRNN):
 
         ##TODO: add feedforward layer here
         # don't forget relu activations
-        W_prelstm, b_prelstm = self.params['W_prelstm'], self.params['b_prelstm']
-        prelstm, prelstm_cache = affine_forward(embeded, W_prelstm, b_prelstm, False)
+        #W_prelstm, b_prelstm = self.params['W_prelstm'], self.params['b_prelstm']
+        #prelstm, prelstm_cache = affine_forward(embeded, W_prelstm, b_prelstm, False)
 
-        new_embeded, relu1_cache = relu_forward(prelstm)
-        new_embeded = new_embeded.reshape(embeded.shape)
+        #new_embeded, relu1_cache = relu_forward(prelstm)
+        #new_embeded = new_embeded.reshape(embeded.shape)
 
 
         #**3. hidden state vectors (N, T, H)
@@ -127,9 +144,9 @@ class MyModel(CaptioningRNN):
         # print(f"hidden states: {hidden_states.shape}")
         ##TODO: add feedforward layer here
         W_postlstm, b_postlstm = self.params['W_postlstm'], self.params['b_postlstm']
-        postlstm, postlstm_cache = affine_forward(hidden_states, W_postlstm, b_postlstm, False)
+        postlstm, postlstm_cache = affine_forward(hidden_states, W_postlstm, b_postlstm)
 
-        new_hidden_states, relu2_cache = relu_forward(postlstm)
+        new_hidden_states, relu0_cache = relu_forward(postlstm)
         new_hidden_states = new_hidden_states.reshape(hidden_states.shape)
 
         #**4. compute scores (N, T, V)
@@ -154,7 +171,7 @@ class MyModel(CaptioningRNN):
         #TODO: add postlstm gradients
         # print(f"up_grad: {up_grad.shape}")
         # print(f"relu2_cache: {relu2_cache.shape}")
-        up_grad = relu_backward(up_grad.reshape(relu2_cache.shape[0], -1), relu2_cache)
+        up_grad = relu_backward(up_grad.reshape(relu0_cache.shape[0], -1), relu0_cache)
         up_grad, dw, db = affine_backward(up_grad, postlstm_cache)
         grads["W_postlstm"] = dw
         grads["b_postlstm"] = db
@@ -169,10 +186,10 @@ class MyModel(CaptioningRNN):
         grads["b"] = db
 
         #TODO: add prelstm gradients
-        up_grad = relu_backward(up_grad.reshape(relu1_cache.shape[0], -1), relu1_cache)
-        up_grad, dw, db = affine_backward(up_grad, prelstm_cache)
-        grads["W_prelstm"] = dw
-        grads["b_prelstm"] = db
+        # up_grad = relu_backward(up_grad.reshape(relu1_cache.shape[0], -1), relu1_cache)
+        # up_grad, dw, db = affine_backward(up_grad, prelstm_cache)
+        # grads["W_prelstm"] = dw
+        # grads["b_prelstm"] = db
 
         #ordering of next two aren't important
         dw = word_embedding_backward(up_grad, we_cache)
@@ -197,3 +214,7 @@ class MyModel(CaptioningRNN):
         ############################################################################
 
         return loss, grads
+
+class MyCaptioningSolver(object):
+    def __init__(self, model, data, **kwargs):
+        super().__init__(model, data, kwargs)

@@ -1,0 +1,19 @@
+Briefly summarize the KEY FINDINGS, strengths and potential limitations of this work
+
+Key Findings:
+
+Strength:
+uses complementary VQA pairs
+PJ-X does not require domain knowledge
+
+introspective vs justification
+
+faster than MCB model
+
+Limitations:
+as with any human annotation, human bias is inherently present.
+VQA-X focuses on evidence to support VQA task rather than describing the scene.
+Did not compare with: VQA-HAT
+unidirectional LSTM?
+
+The authors of the paper present a novel model for the VQA task, which incorporates 2 modes of reasoning, visual and textual. This is 

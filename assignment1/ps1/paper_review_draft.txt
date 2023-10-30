@@ -1,0 +1,25 @@
+6. (2 points) What is the main contribution of this paper? Briefly summarize its key insights,
+strengths and weaknesses.
+
+7. (2 points) What is your personal takeaway from this paper? This could be expressed either
+in terms of relating the approaches adopted in this paper to your traditional understanding
+of learning parameterized models, or potential future directions of research in the area which
+the authors haven’t addressed, or anything else that struck you as being noteworthy.
+
+0-Main Contribution
+The main contribution of the paper was to challenge the notion that learning weights for neural networks is crucial to producing high performing networks. If this notion is removed, then the process for solving neural networks would be reduced to only designing the structure of the network; the weights can be randomly initialized and the network is ready for use. The authors discuss their method for learning the network structure automatically.
+
+1-Strengths
+Weight Agnostic Neural Nets (WANN) are immediately useful, and do not require tuning of weights, whereas traditional parameterized models require extensive training to tune good/useful weights.
+
+2-Drawbacks
+Looking at results table, we see that there is more variance in performance metrics for WANN than fixed topology models. This might be just a natural by-product of random/shared weights. This variance goes away, however, with weight tuning.
+
+Even with tuning, WANN lose to traditional models on benchmark problems like Biped, CarRacing, MNIST(2 layer CNN). However, authors do note that this is somewhat of an unfair comparison. Many fixed topology networks(they focus on CNNs) are products of years of research and experimentation.
+
+One important weakness of the paper is that it fails to discuss the time tradeoff between searching for the WANN and tuning optimal parameters. The authors did not show that using WANN produced significant speedup compared to training traditional fixed topologies to find optimals weights. This is not exactly a red flag, but it would have provided a stronger argument for researching WANN.
+
+3-Personal Takeaways
+This was very interesting to me, as I had read about NEAT as part of my VIP team. The VIP team works on an genetic programming autoML framework(EMADE), and some members were interested in incorporating NEAT in EMADE. The evolutionary style of searching for WANN makes me think that this is also a good feature to implement.
+
+Conceptually, I find that this provides a nice balance in thinking about neural network design and optimization. On one end of the spectrum is the traditional optimization of parameters and the other end is WANN.
